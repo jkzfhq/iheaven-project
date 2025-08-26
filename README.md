@@ -2,11 +2,11 @@
 
 > 一部关于文明永续的工程蓝图
 
-## What happens to our data when we're gone?
+## 当我们离去，数据将何去何从？ (What happens to our data when we're gone?)
 
 我们的数字足迹正在呈指数级增长，但它却无比脆弱。它储存在中心化的服务器上，受我们从未阅读的服务条款约束，最终的命运是被删除。我们作为建造者，该如何为人类解决永久、自主且不可篡改的数据保存问题？
 
-## Our Answer: The iHeaven Project
+## 我们的答案：天庭计划 (Our Answer: The iHeaven Project)
 
 这是一个旨在构建**众生图书馆 (Library of Beings)** 的开源计划：一个去中心化的网络，让每个个体与文化都能永久保存自己的故事。我们正在构建一个旨在延续数个世纪、由用户治理、不被任何人拥有的系统，以此对抗宇宙最无情的法则——熵增。
 
@@ -80,14 +80,14 @@
 
 ---
 
-### We Are Looking for the First 100 Researchers
+### 我们正在寻找首批 100 位研究员 (We Are Looking for the First 100 Researchers)
 
 这不仅仅是一个项目，这是一个跨越世代的使命。我们正在寻找首批 100 位创始研究员，与我们一同建造这个未来。
 
 无论你是分布式存储专家、区块链架构师、AI 科学家、经济模型设计师，还是对这个使命充满热情的哲学家、艺术家和梦想家，我们都欢迎你的加入。
 
--   **欢迎参与讨论**: 前往 `Issues` 板块参与具体的技术辩论，或在 `Discussions` 板块分享你对数字生命、文明永续等话题的看法。
+-   **参与讨论**: 前往 `Issues` 板块参与具体的技术辩论，或在 `Discussions` 板块分享你对数字生命、文明永续等话题的看法。
 
-### License
+### 开源许可 (License)
 
 本项目采用 [MIT License](./LICENSE) 开源许可证。
