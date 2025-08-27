@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API调试工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { margin: 5px; padding: 8px 15px; }
+    </style>
+</head>
+<body>
+    <h1>📊 iHeaven 统一档案管理系统</h1>
+    
+    <div class="section info">
+        <h3>系统说明</h3>
+        <p>统一的档案管理系统：本地存储 + 自动P2P同步。所有档案都存储在本地，通过P2P向全球网络同步。</p>
+    </div>
+
+    <div class="section">
+        <h3>🏥 健康检查</h3>
+        <button onclick="testHealth()">测试健康检查</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>📊 P2P状态</h3>
+        <button onclick="testP2PStatus()">测试P2P状态</button>
+        <div id="p2p-status-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>📋 档案管理</h3>
+        <button onclick="testGetItems()">获取所有档案</button>
+        <button onclick="testCreateItem()">创建新档案</button>
+        <button onclick="testSyncItems()">同步网络档案</button>
+        <div id="items-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>📁 本地文件系统</h3>
+        <button onclick="listLocalFiles()">模拟查看本地文件</button>
+        <div id="local-files-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        function displayResult(elementId, success, data, title = '') {
+            const element = document.getElementById(elementId);
+            const className = success ? 'success' : 'error';
+            const status = success ? '✅ 成功' : '❌ 失败';
+            
+            element.innerHTML = `
+                <div class="${className}" style="margin-top: 10px; padding: 10px; border-radius: 3px;">
+                    <h4>${title} ${status}</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                displayResult('health-result', response.ok, data, '健康检查');
+            } catch (error) {
+                displayResult('health-result', false, { error: error.message }, '健康检查');
+            }
+        }
+        
+        async function testP2PStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/p2p/status`);
+                const data = await response.json();
+                displayResult('p2p-status-result', response.ok, data, 'P2P状态');
+            } catch (error) {
+                displayResult('p2p-status-result', false, { error: error.message }, 'P2P状态');
+            }
+        }
+        
+        async function testGetItems() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/items/`);
+                const data = await response.json();
+                displayResult('items-result', response.ok, data, '档案列表');
+                
+                // 额外显示档案数量和名称
+                if (response.ok && data.data && data.data.length > 0) {
+                    const itemsInfo = data.data.map(item => ({
+                        id: item.heaven_id,
+                        name: item.meta?.name || '未命名',
+                        tier: item.tier,
+                        source: item.source
+                    }));
+                    
+                    document.getElementById('items-result').innerHTML += `
+                        <div class="info" style="margin-top: 10px; padding: 10px; border-radius: 3px;">
+                            <h4>📊 档案摘要</h4>
+                            <p><strong>总数:</strong> ${data.total}</p>
+                            <p><strong>档案列表:</strong></p>
+                            <ul>
+                                ${itemsInfo.map(item => `
+                                    <li>${item.name} (${item.tier}) - ${item.id}</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                displayResult('items-result', false, { error: error.message }, '档案列表');
+            }
+        }
+        
+        async function testCreateItem() {
+            try {
+                const testData = {
+                    tier: 'citizen',
+                    owner_pubkey: 'ed25519:debug_test',
+                    meta: {
+                        name: '调试测试用户',
+                        region: '测试地区',
+                        era: '现代',
+                        tags: ['调试', '测试']
+                    },
+                    access: 'public'
+                };
+                
+                const response = await fetch(`${API_BASE}/api/v1/items/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                displayResult('items-result', response.ok, data, '创建档案');
+                
+                if (response.ok) {
+                    setTimeout(() => testGetItems(), 1000); // 1秒后自动刷新列表
+                }
+            } catch (error) {
+                displayResult('items-result', false, { error: error.message }, '创建档案');
+            }
+        }
+        
+        async function testSyncItems() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/items/sync`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                displayResult('items-result', response.ok, data, '同步档案');
+                
+                if (response.ok) {
+                    setTimeout(() => testGetItems(), 1000); // 1秒后自动刷新列表
+                }
+            } catch (error) {
+                displayResult('items-result', false, { error: error.message }, '同步档案');
+            }
+        }
+        
+        function listLocalFiles() {
+            // 模拟显示本地文件信息（实际中这些信息来自API）
+            const mockFileInfo = {
+                message: "本地文件存储信息",
+                node1_data_dir: "./data/items/",
+                node2_data_dir: "./data-node2/items/",
+                note: "实际文件存储在服务器端，前端无法直接访问文件系统",
+                suggestion: "使用 'ls data/items/' 命令在终端查看实际文件"
+            };
+            
+            displayResult('local-files-result', true, mockFileInfo, '本地文件系统');
+        }
+        
+        // 页面加载时自动测试
+        window.onload = function() {
+            console.log('🔧 API调试工具已加载');
+            testHealth();
+            testP2PStatus();
+            testGetItems();
+        };
+    </script>
+</body>
+</html>

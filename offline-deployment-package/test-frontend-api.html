@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端API测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; }
+        button { margin: 5px; padding: 8px 15px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 前端API调用测试</h1>
+    
+    <button onclick="testDirectFetch()">直接Fetch测试</button>
+    <button onclick="testApiCall()">ApiCall函数测试</button>
+    <button onclick="testP2PItems()">P2P档案测试</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        function addResult(title, success, data) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            results.appendChild(div);
+        }
+        
+        // 直接使用fetch测试
+        async function testDirectFetch() {
+            try {
+                console.log('🔍 开始直接fetch测试...');
+                const response = await fetch(API_BASE + '/api/v1/p2p/items/');
+                const data = await response.json();
+                
+                addResult('直接Fetch测试', true, {
+                    status: response.status,
+                    contentType: response.headers.get('content-type'),
+                    dataType: typeof data,
+                    isArray: Array.isArray(data?.data),
+                    total: data?.total,
+                    firstItem: data?.data?.[0]?.meta?.name
+                });
+            } catch (error) {
+                addResult('直接Fetch测试', false, { error: error.message });
+            }
+        }
+        
+        // 使用原来的apiCall函数测试
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                
+                // 检查响应是否为JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    return { 
+                        success: false, 
+                        error: `服务器返回非JSON响应: ${text.substring(0, 100)}...`,
+                        status: response.status 
+                    };
+                }
+                
+                const result = await response.json();
+                console.log('API Response:', { endpoint, status: response.status, result });
+                
+                return { success: response.ok, data: result, status: response.status };
+            } catch (error) {
+                console.error('API Call Error:', { endpoint, error });
+                return { success: false, error: error.message, status: 'network_error' };
+            }
+        }
+        
+        async function testApiCall() {
+            try {
+                console.log('🔍 开始apiCall函数测试...');
+                const result = await apiCall('/api/v1/p2p/items/');
+                
+                addResult('ApiCall函数测试', result.success, {
+                    success: result.success,
+                    status: result.status,
+                    dataType: typeof result.data,
+                    hasData: !!result.data?.data,
+                    isDataArray: Array.isArray(result.data?.data),
+                    total: result.data?.total,
+                    error: result.error
+                });
+            } catch (error) {
+                addResult('ApiCall函数测试', false, { error: error.message });
+            }
+        }
+        
+        async function testP2PItems() {
+            try {
+                console.log('🔍 开始P2P档案完整测试...');
+                const result = await apiCall('/api/v1/p2p/items/');
+                
+                if (result.success && result.data) {
+                    if (Array.isArray(result.data.data) && result.data.data.length > 0) {
+                        addResult('P2P档案测试 - 成功', true, {
+                            message: '数据获取成功',
+                            total: result.data.total,
+                            items: result.data.data.map(item => ({
+                                id: item.heaven_id,
+                                name: item.meta?.name,
+                                tier: item.tier
+                            }))
+                        });
+                    } else {
+                        addResult('P2P档案测试 - 无数据', false, {
+                            message: '响应成功但无数据',
+                            data: result.data
+                        });
+                    }
+                } else {
+                    addResult('P2P档案测试 - 失败', false, {
+                        message: 'API调用失败',
+                        result: result
+                    });
+                }
+            } catch (error) {
+                addResult('P2P档案测试', false, { error: error.message });
+            }
+        }
+        
+        // 页面加载时自动运行测试
+        window.onload = function() {
+            console.log('🚀 前端API测试页面已加载');
+            setTimeout(() => testDirectFetch(), 500);
+            setTimeout(() => testApiCall(), 1000);
+            setTimeout(() => testP2PItems(), 1500);
+        };
+    </script>
+</body>
+</html>
